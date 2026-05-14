@@ -48,7 +48,7 @@ inJupyterNb = any(
     )
 )
 get_ipython().run_line_magic(
-    "matplotlib", "" if inTerminal else "notebook" if inJupyterNb else "widget"
+    "matplotlib", "" if inTerminal else "notebook" if inJupyterNb else "inline"
 )
 
 

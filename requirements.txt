@@ -1,0 +1,10 @@
+torch
+torchtext
+transformers
+numpy
+scikit-learn
+pandas
+matplotlib
+seaborn
+lightning
+jupytext

@@ -20,6 +20,8 @@ import torch.nn.functional as F
 from lightning import LightningModule, LightningDataModule
 import torchtext
 
+import string
+
 if hasattr(torchtext, "disable_torchtext_deprecation_warning"):
     torchtext.disable_torchtext_deprecation_warning()
 
@@ -84,8 +86,7 @@ class ReviewsDataset(Dataset):
 
     def __len__(self):
         """Returns the length of the dataset."""
-        # YOUR CODE HERE
-        pass
+        return len(self._labels)
 
     def __getitem__(self, idx):
         """
@@ -96,8 +97,13 @@ class ReviewsDataset(Dataset):
             idx: a single index
         Returns: a (review, label) tuple
         """
-        # YOUR CODE HERE
-        pass
+        review = self._reviews[idx]
+        label = self._labels[idx]
+        
+        if self.vocab is not None:
+            review = self.vocab(review)
+            
+        return review, label
 
     def _preprocess_reviews(self, raw_reviews):
         """
@@ -112,8 +118,16 @@ class ReviewsDataset(Dataset):
 
         Returns: list of tokenized reviews
         """
-        # YOUR CODE HERE
-        pass
+        tokenizer = torchtext.data.utils.get_tokenizer("basic_english")
+        punctuations = set(string.punctuation)
+        
+        processed_reviews = []
+        for review in raw_reviews:
+            tokens = tokenizer(review)
+            filtered_tokens = [token for token in tokens if token not in punctuations]
+            processed_reviews.append(filtered_tokens)
+            
+        return processed_reviews
 
     def _preprocess_labels(self, raw_labels):
         """
@@ -124,7 +138,7 @@ class ReviewsDataset(Dataset):
         # YOUR CODE HERE
         # Hint: You can remove leading and trailing whitespace from the raw
         # labels using the strip() method.
-        pass
+        return [1 if label.strip() == "positive" else 0 for label in raw_labels]
 
 
 # %% [markdown]
