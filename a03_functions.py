@@ -16,6 +16,7 @@
 import torch
 from torch import nn
 from torch.utils.data import Dataset, DataLoader, random_split
+from torchtext.data.utils import get_tokenizer
 import torch.nn.functional as F
 from lightning import LightningModule, LightningDataModule
 import torchtext
@@ -118,7 +119,7 @@ class ReviewsDataset(Dataset):
 
         Returns: list of tokenized reviews
         """
-        tokenizer = torchtext.data.utils.get_tokenizer("basic_english")
+        tokenizer = get_tokenizer("basic_english")
         punctuations = set(string.punctuation)
         
         processed_reviews = []
