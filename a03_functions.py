@@ -159,8 +159,23 @@ def review_collate_fn(raw_batch):
     batch_size*MAX_SEQ_LEN and batch_size, respectively.
 
     """
-    # YOUR CODE HERE
-    pass
+    # 1. Unzip the batch into separate lists of reviews and labels
+    reviews = [item[0] for item in raw_batch]
+    labels = [item[1] for item in raw_batch]
+
+    # 2. Convert labels to a LongTensor
+    labels_tensor = torch.LongTensor(labels)
+
+    # 3. Truncate reviews to MAX_SEQ_LEN and convert to tensors
+    # MAX_SEQ_LEN is imported from a03_helper at the top of the file
+    truncated_reviews = [torch.tensor(r[:MAX_SEQ_LEN]) for r in reviews]
+
+    # 4. Pad sequences to ensure they all have the same length
+    # Uses 0 as the default padding value (corresponding to the <pad> token)
+    from torch.nn.utils.rnn import pad_sequence
+    reviews_padded = pad_sequence(truncated_reviews, batch_first=True, padding_value=0)
+
+    return reviews_padded, labels_tensor
 
 
 # %% [markdown]
