@@ -1,5 +1,4 @@
-torch
-torchtext
+torch==2.3.0
 transformers
 numpy
 scikit-learn
@@ -8,3 +7,4 @@ matplotlib
 seaborn
 lightning
 jupytext
+torchtext==0.18.0
