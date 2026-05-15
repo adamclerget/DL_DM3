@@ -167,7 +167,6 @@ def review_collate_fn(raw_batch):
     labels_tensor = torch.LongTensor(labels)
 
     # 3. Truncate reviews to MAX_SEQ_LEN and convert to tensors
-    # MAX_SEQ_LEN is imported from a03_helper at the top of the file
     truncated_reviews = [torch.tensor(r[:MAX_SEQ_LEN]) for r in reviews]
 
     # 4. Pad sequences to ensure they all have the same length
@@ -205,10 +204,24 @@ class SimpleLSTM(nn.Module):
 
         # YOUR CODE HERE
         # Note: Use the following attributes to store the required layers.
-        self.embedding = ...
-        self.lstm = ...
-        self.fc = ...
-        self.sigmoid = ...
+
+        # 1. Embedding layer
+        self.embedding = torch.nn.Embedding(vocab_size, embedding_dim)
+        
+        # 2. LSTM encoder
+        self.lstm = torch.nn.LSTM(
+            input_size=embedding_dim, 
+            hidden_size=hidden_dim, 
+            batch_first=True,
+            dropout=dropout
+        )
+        
+        # 3. Linear layer (which maps the last LSTM output to a single logit)
+        self.fc = torch.nn.Linear(hidden_dim, 1)
+        
+        # 4. Logistic function (Sigmoid)
+        self.sigmoid = torch.nn.Sigmoid()
+
 
     def forward(self, x):
         """
@@ -226,6 +239,23 @@ class SimpleLSTM(nn.Module):
         hidden = self.init_hidden(len(x))
 
         # YOUR CODE HERE
+        # 1. Embedding layer: Transform token IDs into dense vectors
+        embedded = self.embedding(x)
+        
+        # 2. LSTM layer: Process the sequence of embeddings
+        # Pass the 'hidden' state directly into the LSTM
+        _, (hn, _) = self.lstm(embedded, hidden)
+        
+        # 3. Extract the thought vector
+        # We take the hidden state from the last layer: (batch_size, hidden_dim)
+        thought_vector = hn[-1]
+        
+        # 4. Linear layer + Sigmoid activation
+        # Produce probability score for the positive class: (batch_size, 1)
+        logits = self.fc(thought_vector)
+        probs = self.sigmoid(logits)
+        
+        return probs, thought_vector
 
     def init_hidden(self, batch_size):
         """Initialize hidden states.
@@ -236,7 +266,13 @@ class SimpleLSTM(nn.Module):
         # YOUR CODE HERE
         # Note: ensure that the returned tensors are located on the same device
         # as the model's parameters.
-        pass
+        # Un LSTM standard attend une mémoire de forme (num_layers, batch_size, hidden_dim)
+        # Ici on a 1 seule couche (num_layers=1)
+        hidden_state = torch.zeros(1, batch_size, self.hidden_dim)
+        cell_state = torch.zeros(1, batch_size, self.hidden_dim)
+        
+        return (hidden_state, cell_state)
+
 
 
 # %% [markdown]
@@ -333,22 +369,52 @@ class ReviewsDataModule(LightningDataModule):
         # Note: You can ignore the `stage` parameter in this task (but read
         # about its purpose in the documentation).
         #
+        # We compte the total number of examples for each set (8:1:1)
+        total_len = len(self.dataset)
+        train_len = int(0.8 * total_len)
+        val_len = int(0.1 * total_len)
+        test_len = total_len - train_len - val_len # to ensure all examples are used
+
+        # we create a generator with the global SEED to ensure reproducibility of the split
+        generator = torch.Generator().manual_seed(SEED)
+
+        # we use random_split to split the dataset into train, validation, and test sets
+        self.train_set, self.val_set, self.test_set = random_split(
+            self.dataset,
+            [train_len, val_len, test_len],
+            generator=generator
+        )
         pass
 
     def train_dataloader(self):
         # YOUR CODE HERE
         # Return a data loader for the train set with your reviews_collate_fn of task 2.
         # Make sure that the data is shuffled before every epoch.
-        pass
+        return DataLoader(
+            self.train_set,
+            batch_size=BATCH_SIZE,
+            shuffle=True, 
+            collate_fn=review_collate_fn
+        )
 
     def val_dataloader(self):
         # YOUR CODE HERE
         # Return a data loader for the validation set with  your reviews_collate_fn of task 2.
         # No need to shuffle.
-        pass
+        return DataLoader(
+            self.val_set,
+            batch_size=BATCH_SIZE,
+            shuffle=False,
+            collate_fn=review_collate_fn
+        )
 
     def test_dataloader(self):
         # YOUR CODE HERE
         # Return a data loader for the test set with your reviews_collate_fn of task 2.
         # No need to shuffle.
-        pass
+        return DataLoader(
+            self.test_set,
+            batch_size=BATCH_SIZE,
+            shuffle=False,
+            collate_fn=review_collate_fn
+        )
