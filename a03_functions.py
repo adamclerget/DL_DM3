@@ -208,12 +208,13 @@ class SimpleLSTM(nn.Module):
         # 1. Embedding layer
         self.embedding = torch.nn.Embedding(vocab_size, embedding_dim)
         
-        # 2. LSTM encoder
+        # 2. LSTM encoder (avec num_layers et dropout)
         self.lstm = torch.nn.LSTM(
             input_size=embedding_dim, 
             hidden_size=hidden_dim, 
+            num_layers=num_layers,
             batch_first=True,
-            dropout=dropout
+            dropout=cell_dropout
         )
         
         # 3. Linear layer (which maps the last LSTM output to a single logit)
@@ -266,10 +267,10 @@ class SimpleLSTM(nn.Module):
         # YOUR CODE HERE
         # Note: ensure that the returned tensors are located on the same device
         # as the model's parameters.
-        # Un LSTM standard attend une mémoire de forme (num_layers, batch_size, hidden_dim)
-        # Ici on a 1 seule couche (num_layers=1)
-        hidden_state = torch.zeros(1, batch_size, self.hidden_dim)
-        cell_state = torch.zeros(1, batch_size, self.hidden_dim)
+
+
+        hidden_state = torch.zeros(self.num_layers, batch_size, self.hidden_dim)
+        cell_state = torch.zeros(self.num_layers, batch_size, self.hidden_dim)
         
         return (hidden_state, cell_state)
 
