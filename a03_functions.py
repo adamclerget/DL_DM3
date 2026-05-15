@@ -302,23 +302,35 @@ class LitSimpleLSTM(LightningModule):
         # Return an optimizer for the parameters which require gradients (cf.
         # pre-training task).
         # Note: Use self.lr as the learning rate.
-        pass
+
+        # Filter parameters that require gradients (useful when freezing layers later)
+        trainable_params = filter(lambda p: p.requires_grad, self.model.parameters())
+        
+        # Return the Adam optimizer with the specified learning rate
+        from torch.optim import Adam
+        optimizer = Adam(trainable_params, lr=self.lr)
+        return optimizer
 
     def forward(self, inputs):
         # YOUR CODE HERE
         # Compute and return the model's outputs given the inputs.
-        pass
+
+        # self.model is our SimpleLSTM instance
+        return self.model(inputs)
 
     def training_step(self, batch, _):
         reviews, labels = batch
-
-        output = ...
-        loss = ...
 
         # YOUR CODE HERE
         # Forward pass: Compute the model's output, reshape it to a vector, and
         # then compute the (binary) cross-entropy.
         # Use self.loss_fn to compute the loss.
+        probs, _ = self(reviews)  # Forward pass through the model to get probabilities
+        output = probs.squeeze(-1)  # Remove the extra dimension (batch_size, 1) -> (batch_size)
+        loss = self.loss_fn(output, labels.float())  # Compute binary cross-entropy loss
+
+
+        
 
         # YOUR CODE HERE
         # Logging: Log the loss per step and the accuracy per epoch.
@@ -328,8 +340,17 @@ class LitSimpleLSTM(LightningModule):
         # Hint: It is often helpful to put one (or both) of these
         # metrics into the progress bar.
 
+        # Compute accuracy (predictions are 1 if prob >= 0.5, else 0)
+        predictions = (output >= 0.5).float()
+        accuracy = (predictions == labels).float().mean()
+
+        # Logging: Log the loss per step and the accuracy per epoch
+        self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
+        self.log("train_acc", accuracy, on_step=False, on_epoch=True, prog_bar=True)
+
         # YOUR CODE HERE
         # Return the loss and let lightning handle backprop automatically.
+        return loss
 
     def validation_step(self, batch, _):
         return self._eval(batch, "val")
@@ -340,16 +361,23 @@ class LitSimpleLSTM(LightningModule):
     def _eval(self, batch, eval_type):
         reviews, labels = batch
 
-        output = ...
-        loss = ...
-
         # YOUR CODE HERE
         # Implement the forward pass (similar to the training step).
-
+        probs, _ = self(reviews)
+        output = probs.squeeze(-1)
+        
+        # Compute the loss
+        loss = self.loss_fn(output, labels.float())
         # YOUR CODE HERE
         # Logging: Log the loss and the accuracy per epoch. It is often
         # helpful to put one (or both) of these metrics into the progress bar.
         # Use `eval_type` to distinguish between validation and test metrics.
+        # Compute accuracy
+        predictions = (output >= 0.5).float()
+        accuracy = (predictions == labels).float().mean()
+
+        self.log(f"{eval_type}_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log(f"{eval_type}_acc", accuracy, on_step=False, on_epoch=True, prog_bar=True)
 
 
 # %%
