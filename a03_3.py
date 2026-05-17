@@ -1,30 +1,22 @@
-# ---
-# jupyter:
-#   jupytext:
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.17.1
-#   kernelspec:
-#     display_name: Python 3 (ipykernel)
-#     language: python
-#     name: python3
-# ---
+#!/usr/bin/env python
+# coding: utf-8
 
-# %%
-# %load_ext autoreload
-# %autoreload 2
+# In[1]:
+
+
+get_ipython().run_line_magic('load_ext', 'autoreload')
+get_ipython().run_line_magic('autoreload', '2')
 
 import torch
 from a03_functions import SimpleLSTM
 from a03_helper import DEVICE
 
 
-# %% [markdown]
 # ## Task 3: Recurrent Neural Networks
 
-# %%
+# In[8]:
+
+
 # Test constructor
 model = SimpleLSTM(50, 10, 32, 2, 0.1).to(DEVICE)
 print(model)
@@ -37,7 +29,10 @@ print(model)
 #   (sigmoid): Sigmoid()
 # )
 
-# %%
+
+# In[10]:
+
+
 # Test forward pass (with a batch of 3 examples)
 model = SimpleLSTM(50, 10, 32, 2).to(DEVICE)
 dummy_data = torch.arange(30, dtype=torch.int, device=DEVICE).reshape(3, 10)
@@ -67,7 +62,10 @@ print(states)
 #          0.9985, 0.9985, 0.9985, 0.9985, 0.9985]], device='cuda:0 or cpu',
 #        grad_fn=<SliceBackward0>)
 
-# %%
+
+# In[11]:
+
+
 # Test with random model parameters
 for key in model.state_dict():
     A = model.state_dict()[key]
@@ -78,3 +76,4 @@ print(states)
 # You should now see different outputs for each of the three examples. Run this multiple
 # times; you should see output probabilities in the entire range from [0-1] (i.e., not
 # just extremes)
+
